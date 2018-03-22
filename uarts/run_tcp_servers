@@ -1,0 +1,21 @@
+#!/bin/bash
+#
+
+function start_uart {
+	local NO=$1
+	[ "" == "${NO}" ] && echo "please specify device number..." && exit 1
+	local PORT="1800${NO}"
+	local DEVICE="/dev/ttyUSB${NO}"
+	local LOG="/tmp/ttyUSB${NO}.log"
+	echo "running tcp-server at port ${PORT} for ${DEVICE}, ouptut logs to ${LOG} ..."
+	nohup socat -v -v tcp-l:${PORT},fork file:${DEVICE},b115200,nonblock,raw,echo=0,crnl > ${LOG} 2>&1&
+}
+
+function run_all_servers {
+	local DEVICES=($(find /dev -maxdepth 1 -name 'ttyUSB*' | sort | xargs -I{} sh -c "basename {}" | sed 's/ttyUSB//g'))
+	for d in "${DEVICES[@]}"; do
+		start_uart $d
+	done
+}
+
+run_all_servers $@
